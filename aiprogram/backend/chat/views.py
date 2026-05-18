@@ -260,6 +260,78 @@ class AIModelListView(generics.ListAPIView):
         return qs
 
 
+class MyModelPricesView(APIView):
+    """
+    普通用户查询自己可用的模型与"人民币" 价格。
+
+    返回字段（按业务类型分组）：
+      - business_type / business_type_display
+      - models[]:
+          id, model_id, name, business_type,
+          is_free, context_length,
+          input_price_cny_per_1k, output_price_cny_per_1k,
+          input_price_cny_per_1m, output_price_cny_per_1m,
+          source_count                # 来源后端数量
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .permissions import get_user_available_models
+
+        rate = Decimal(str(_get_usd_to_cny_rate()))
+        qs = (get_user_available_models(request.user)
+              .prefetch_related('source_backends')
+              .order_by('business_type', '-is_free', 'name'))
+        btype = request.query_params.get('business_type')
+        if btype:
+            qs = qs.filter(business_type=btype)
+
+        def _to_cny_per_unit(p, multiplier):
+            try:
+                return float((Decimal(str(p or 0)) * rate * Decimal(str(multiplier))).quantize(Decimal('0.000001')))
+            except Exception:
+                return 0.0
+
+        grouped = {}
+        for m in qs:
+            in_1k = _to_cny_per_unit(m.pricing_prompt, 1000)
+            out_1k = _to_cny_per_unit(m.pricing_completion, 1000)
+            in_1m = _to_cny_per_unit(m.pricing_prompt, 1_000_000)
+            out_1m = _to_cny_per_unit(m.pricing_completion, 1_000_000)
+            row = {
+                'id': m.id,
+                'model_id': m.model_id,
+                'name': m.name,
+                'business_type': m.business_type,
+                'business_type_display': m.get_business_type_display(),
+                'is_free': m.is_free,
+                'context_length': m.context_length,
+                'input_price_cny_per_1k': in_1k,
+                'output_price_cny_per_1k': out_1k,
+                'input_price_cny_per_1m': in_1m,
+                'output_price_cny_per_1m': out_1m,
+                'source_count': m.source_backends.count(),
+            }
+            bt = m.business_type
+            if bt not in grouped:
+                grouped[bt] = {
+                    'business_type': bt,
+                    'business_type_display': m.get_business_type_display(),
+                    'models': [],
+                }
+            grouped[bt]['models'].append(row)
+
+        return Response({
+            'code': 200,
+            'currency': 'CNY',
+            'usd_to_cny': float(rate),
+            'tier': getattr(request.user, 'tier', None),
+            'tier_display': getattr(request.user, 'get_tier_display', lambda: '')(),
+            'groups': list(grouped.values()),
+            'total': qs.count(),
+        })
+
+
 class SyncModelsView(APIView):
     """从 API 后端同步模型。支持 ?backend_id=X 指定后端"""
     permission_classes = [permissions.IsAuthenticated]

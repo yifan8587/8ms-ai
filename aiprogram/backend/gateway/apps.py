@@ -5,3 +5,6 @@ class GatewayConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'gateway'
     verbose_name = 'API转发配置'
+
+    def ready(self):
+        from . import signals  # noqa: F401

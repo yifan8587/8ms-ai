@@ -45,13 +45,20 @@ def _backend_ids_from_groups(groups_qs):
 
 
 def _model_ids_from_backend_ids(backend_ids):
-    """根据后端 PK 集合查找关联的 AIModel PK 集合。"""
+    """根据后端 PK 集合查找关联的 AIModel PK 集合。
+
+    兼容历史的 source_backend (单值 FK) 与新的 source_backends (M2M)。
+    任一字段命中即视为该模型属于这些后端。
+    """
     if not backend_ids:
         return set()
+    from django.db.models import Q
     return set(
         AIModel.objects.filter(
-            source_backend_id__in=backend_ids, is_active=True
-        ).values_list('id', flat=True)
+            Q(source_backend_id__in=backend_ids)
+            | Q(source_backends__id__in=backend_ids),
+            is_active=True,
+        ).values_list('id', flat=True).distinct()
     )
 
 

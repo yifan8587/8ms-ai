@@ -93,8 +93,32 @@ class APIBackendDetailView(APIView):
             backend = APIBackend.objects.get(pk=pk)
         except APIBackend.DoesNotExist:
             return Response({'code': 404, 'msg': '后端不存在'}, status=status.HTTP_404_NOT_FOUND)
+
+        from chat.models import AIModel
+        related = AIModel.objects.filter(source_backends=backend) | AIModel.objects.filter(source_backend=backend)
+        related = related.distinct()
+        will_delete = 0
+        will_detach = 0
+        for m in related:
+            others = m.source_backends.exclude(pk=backend.pk).count()
+            if m.source_backend_id and m.source_backend_id != backend.pk:
+                others += 1
+            if others == 0:
+                will_delete += 1
+            else:
+                will_detach += 1
+
         backend.delete()
-        return Response({'code': 200, 'msg': '已删除'})
+        return Response({
+            'code': 200,
+            'msg': (f'已删除后端「{backend.name}」，'
+                    f'连带删除 {will_delete} 个仅来源于此后端的模型，'
+                    f'解除关联 {will_detach} 个多来源模型'),
+            'data': {
+                'deleted_models': will_delete,
+                'detached_models': will_detach,
+            },
+        })
 
 
 class APIBackendHealthResetView(APIView):

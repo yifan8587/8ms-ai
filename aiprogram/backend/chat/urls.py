@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    AIModelListView, SyncModelsView,
+    AIModelListView, SyncModelsView, MyModelPricesView,
     ConversationListCreateView, ConversationDetailView,
     ChatView,
     AdminModelListView, AdminModelUpdateView, AdminModelBatchUpdateView,
@@ -10,6 +10,7 @@ from .views import (
 urlpatterns = [
     path('models/', AIModelListView.as_view(), name='model-list'),
     path('models/sync/', SyncModelsView.as_view(), name='model-sync'),
+    path('my/model-prices/', MyModelPricesView.as_view(), name='my-model-prices'),
     path('conversations/', ConversationListCreateView.as_view(), name='conversation-list'),
     path('conversations/<int:pk>/', ConversationDetailView.as_view(), name='conversation-detail'),
     path('send/', ChatView.as_view(), name='chat-send'),

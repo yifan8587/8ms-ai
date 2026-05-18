@@ -45,6 +45,7 @@ export const deleteMyToken = (id) => request.delete(`/users/tokens/${id}/`)
 // ── 个人账单 & 用量 ──────────────────────────────────────────────
 export const getMyBilling = (params) => request.get('/billing/my/records/', { params })
 export const getMyUsage = (params) => request.get('/billing/my/usage/', { params })
+export const getMyModelPrices = (params) => request.get('/chat/my/model-prices/', { params })
 
 // ── Gateway: 元数据（下拉选项） ─────────────────────────────────
 export const getGatewayMeta = () => request.get('/gateway/meta/')

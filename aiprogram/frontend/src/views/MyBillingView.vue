@@ -47,6 +47,82 @@
       <!-- 每日趋势图 -->
       <div ref="chartRef" style="height:200px;margin-bottom:20px" />
 
+      <!-- 我的可用模型与价格 -->
+      <div class="section-title" style="display:flex;align-items:center;gap:8px;">
+        我的可用模型与价格
+        <el-tag v-if="prices?.usd_to_cny" type="info" size="small" effect="plain">
+          汇率 1 USD ≈ {{ Number(prices.usd_to_cny).toFixed(4) }} CNY
+        </el-tag>
+        <el-tag v-if="prices?.tier_display" effect="plain" size="small">
+          当前套餐：{{ prices.tier_display }}
+        </el-tag>
+        <el-radio-group v-model="priceUnit" size="small" style="margin-left:auto">
+          <el-radio-button value="1k">¥/1K tokens</el-radio-button>
+          <el-radio-button value="1m">¥/1M tokens</el-radio-button>
+        </el-radio-group>
+      </div>
+
+      <div v-loading="priceLoading">
+        <div v-if="!prices || !prices.groups?.length" class="empty-hint">
+          暂无可用模型。请联系管理员为您分配套餐或模型权限。
+        </div>
+        <el-collapse v-else v-model="activeGroups" class="price-collapse">
+          <el-collapse-item
+            v-for="grp in prices.groups"
+            :key="grp.business_type"
+            :name="grp.business_type"
+          >
+            <template #title>
+              <span class="grp-title">
+                {{ grp.business_type_display }}
+                <el-tag size="small" effect="plain">{{ grp.models.length }} 个</el-tag>
+              </span>
+            </template>
+            <el-table :data="grp.models" stripe size="small" style="width:100%">
+              <el-table-column label="模型名称" min-width="180">
+                <template #default="{ row }">
+                  <div style="font-weight:600">{{ row.name }}</div>
+                  <div style="font-size:12px;color:#888">{{ row.model_id }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="90" align="center">
+                <template #default="{ row }">
+                  <el-tag v-if="row.is_free" type="success" size="small">免费</el-tag>
+                  <el-tag v-else size="small">计费</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="上下文" width="100" align="center">
+                <template #default="{ row }">{{ formatContext(row.context_length) }}</template>
+              </el-table-column>
+              <el-table-column
+                :label="priceUnit === '1k' ? '输入 ¥/1K' : '输入 ¥/1M'"
+                width="130" align="right"
+              >
+                <template #default="{ row }">
+                  <span :class="{ 'free-cell': row.is_free }">
+                    {{ priceUnit === '1k'
+                       ? formatPrice(row.input_price_cny_per_1k)
+                       : formatPrice(row.input_price_cny_per_1m) }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column
+                :label="priceUnit === '1k' ? '输出 ¥/1K' : '输出 ¥/1M'"
+                width="130" align="right"
+              >
+                <template #default="{ row }">
+                  <span :class="{ 'free-cell': row.is_free }">
+                    {{ priceUnit === '1k'
+                       ? formatPrice(row.output_price_cny_per_1k)
+                       : formatPrice(row.output_price_cny_per_1m) }}
+                  </span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-collapse-item>
+        </el-collapse>
+      </div>
+
       <!-- 账单流水 -->
       <div class="section-title">账单流水</div>
       <el-table :data="records" v-loading="recordLoading" stripe size="small" max-height="300">
@@ -78,7 +154,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import { useUserStore } from '../store/user'
-import { getMyBilling, getMyUsage } from '../api/admin'
+import { getMyBilling, getMyUsage, getMyModelPrices } from '../api/admin'
 
 const userStore = useUserStore()
 const days = ref(30)
@@ -87,6 +163,36 @@ const records = ref([])
 const recordLoading = ref(false)
 const chartRef = ref()
 let chart = null
+
+const prices = ref(null)
+const priceLoading = ref(false)
+const priceUnit = ref('1k')
+const activeGroups = ref([])
+
+const loadPrices = async () => {
+  priceLoading.value = true
+  try {
+    const res = await getMyModelPrices()
+    prices.value = res
+    activeGroups.value = (res?.groups || []).map(g => g.business_type)
+  } finally {
+    priceLoading.value = false
+  }
+}
+
+const formatPrice = (v) => {
+  const n = Number(v || 0)
+  if (n === 0) return '免费'
+  if (n >= 1) return `¥${n.toFixed(4)}`
+  if (n >= 0.01) return `¥${n.toFixed(5)}`
+  return `¥${n.toFixed(6)}`
+}
+
+const formatContext = (n) => {
+  const v = Number(n || 0)
+  if (v >= 1000) return `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K`
+  return String(v)
+}
 
 const loadUsage = async () => {
   const res = await getMyUsage({ days: days.value })
@@ -127,7 +233,7 @@ const fmtDatetime = (d) => d ? new Date(d).toLocaleString('zh-CN', { hour12: fal
 
 onMounted(async () => {
   await userStore.fetchProfile()
-  await Promise.all([loadUsage(), loadRecords()])
+  await Promise.all([loadUsage(), loadRecords(), loadPrices()])
 })
 onBeforeUnmount(() => chart?.dispose())
 </script>
@@ -147,4 +253,13 @@ onBeforeUnmount(() => chart?.dispose())
 }
 .us-v { font-size: 22px; font-weight: 800; color: #1a1a2e; }
 .us-l { font-size: 12px; color: #888; margin-top: 4px; }
+
+.empty-hint {
+  padding: 24px; text-align: center; color: #888;
+  background: #f8f9ff; border-radius: 10px; margin-bottom: 16px;
+}
+.price-collapse { margin-bottom: 20px; }
+.price-collapse :deep(.el-collapse-item__header) { font-weight: 600; }
+.grp-title { display: inline-flex; align-items: center; gap: 8px; }
+.free-cell { color: #10b981; font-weight: 600; }
 </style>

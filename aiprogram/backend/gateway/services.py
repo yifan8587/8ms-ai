@@ -104,18 +104,66 @@ def _get_rule_backends(rule):
     return rule.get_effective_backends()
 
 
+def _model_source_backend_ids(model_id):
+    """返回所有声明能提供该 model_id 的后端 PK 集合。
+
+    合并 source_backend (单值 FK) 与 source_backends (M2M)，
+    支持「同一 model_id 来自多个后端」的场景。
+    """
+    if not model_id:
+        return None
+    try:
+        from chat.models import AIModel
+    except Exception:
+        return None
+    try:
+        m = (AIModel.objects
+             .prefetch_related('source_backends')
+             .only('id', 'source_backend_id')
+             .get(model_id=model_id))
+    except AIModel.DoesNotExist:
+        return None
+    ids = set(m.source_backends.values_list('pk', flat=True))
+    if m.source_backend_id:
+        ids.add(m.source_backend_id)
+    return ids
+
+
 def select_backend(model_id, user, business_type=None):
-    """核心路由函数：根据模型、用户和业务类型选择最佳后端"""
+    """核心路由函数：根据模型、用户和业务类型选择最佳后端。
+
+    选择优先级：
+      1) 按 RoutingRule 匹配出候选后端集合；
+      2) 与"该 model_id 的来源后端集合"做交集，避免转发到压根不提供该模型的后端；
+      3) 在交集内按策略挑选；
+      4) 任一步为空时按"来源后端集合"内的活跃后端兜底；
+      5) 都没有再退回任意活跃后端。
+    """
     rule = find_matching_rule(model_id, user, business_type)
+    source_ids = _model_source_backend_ids(model_id)
+
     if rule:
-        all_rule_backends = _get_rule_backends(rule)
-        backends = _get_available_backends(all_rule_backends)
+        rule_qs = _get_rule_backends(rule)
+        # 若该模型有明确来源，则只在与规则后端集合的交集内挑选
+        if source_ids:
+            rule_qs = rule_qs.filter(pk__in=source_ids)
+        backends = _get_available_backends(rule_qs)
         if backends:
             strategy_fn = STRATEGY_MAP.get(rule.strategy, _select_round_robin)
             backend = strategy_fn(backends)
             if backend:
                 return backend, rule
 
+    # 规则未命中或交集为空：在该模型的所有来源后端中按轮询挑一个
+    if source_ids:
+        source_qs = APIBackend.objects.filter(pk__in=source_ids)
+        candidates = _get_available_backends(source_qs)
+        if candidates:
+            backend = _select_round_robin(candidates)
+            if backend:
+                return backend, rule
+
+    # 最终兜底：任意活跃后端（用于 /models 同步等不绑定具体模型的请求）
     all_active = _get_available_backends(APIBackend.objects.all())
     if all_active:
         backend = _select_round_robin(all_active)
