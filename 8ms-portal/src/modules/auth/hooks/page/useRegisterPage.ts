@@ -146,9 +146,13 @@ export function useRegisterPage() {
     setSubmitError("");
 
     try {
-      await register(name.trim(), email.trim(), password);
-      // 同登录页：默认硬跳转到 /console/（NEXT_PUBLIC_POST_LOGIN_REDIRECT 可改）
-      redirectAfterAuth({ fallbackRouter: () => router.push("/") });
+      const trimmedName = name.trim();
+      await register(trimmedName, email.trim(), password);
+      // 同登录页：默认硬跳转到 /console/chat（NEXT_PUBLIC_POST_LOGIN_REDIRECT 可改）
+      redirectAfterAuth({
+        username: trimmedName,
+        fallbackRouter: () => router.push("/"),
+      });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : te("unknown"));
     }

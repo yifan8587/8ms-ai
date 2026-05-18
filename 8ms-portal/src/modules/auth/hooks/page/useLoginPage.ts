@@ -80,13 +80,19 @@ export function useLoginPage() {
     setSubmitError("");
 
     try {
-      await login(username.trim(), password);
-      // 默认硬跳转到 /console/（Vue 管理后台），让用户登录后直接进入工作区。
-      // 跳转目标来自 NEXT_PUBLIC_POST_LOGIN_REDIRECT，没有配置时取 /console/。
+      const trimmedUsername = username.trim();
+      await login(trimmedUsername, password);
+      // 默认硬跳转到 /console/chat（Vue 工作区聊天页），让用户登录后直接进入对话。
+      // 跳转目标来自 NEXT_PUBLIC_POST_LOGIN_REDIRECT，没有配置时取 /console/chat。
       // 设置成 "/" 可以保留旧行为：登录后停留在门户首页。
       // /console/ 由 nginx 反向代理到独立的 Vue 服务，所以必须做硬跳转，
       // 不能用 router.push（next 路由表里没有 /console/）。
-      redirectAfterAuth({ fallbackRouter: () => router.push("/") });
+      // SSO：token 已经被 storeAuthSession 同步写入 localStorage，
+      // Vue 端会自动识别为已登录，免二次输入账号密码。
+      redirectAfterAuth({
+        username: trimmedUsername,
+        fallbackRouter: () => router.push("/"),
+      });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : te("unknown"));
     }

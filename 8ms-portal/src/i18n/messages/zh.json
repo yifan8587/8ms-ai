@@ -8,6 +8,7 @@
     "login": "登录",
     "register": "注册",
     "logout": "退出",
+    "openWorkspace": "打开工作台",
     "backToHome": "返回首页",
     "loading": "加载中...",
     "noData": "暂无数据",

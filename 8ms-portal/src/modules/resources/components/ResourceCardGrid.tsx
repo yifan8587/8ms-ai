@@ -35,7 +35,16 @@ const resourceIconMap: Record<ResourceIconKey, LucideIcon> = {
   Presentation,
 };
 
-const CHAT_URL = "https://www.8ms.ai/chat";
+/**
+ * 「接入 API」按钮的跳转目标。
+ * 设计与 Header 账号链接保持一致：
+ *   - 路径走同源相对路径 `/console/chat`，由 nginx 反代到 Vue 工作区；
+ *   - SSO 依赖 storeAuthSession() 同步写入的 localStorage（access_token /
+ *     refresh_token / user_info），不再通过 URL 参数携带 token / 用户对象，
+ *     避免敏感凭证留在浏览器历史 / referrer / 服务端访问日志中；
+ *   - URL 仅追加 `from=portal&u=<username>` 做来源埋点。
+ */
+const ACCESS_API_PATH = "/console/chat";
 
 type ResourceCardGridProps = {
   accessApiLabel: string;
@@ -98,40 +107,33 @@ export function ResourceCardGrid({
     hydrate();
   }, [hydrate]);
 
-  const buildChatUrl = (accessToken: string) => {
-    const chatUrl = new URL(CHAT_URL);
-    chatUrl.searchParams.set("access_token", accessToken);
-    chatUrl.searchParams.set("token", accessToken);
-
-    if (refreshToken) {
-      chatUrl.searchParams.set("refresh_token", refreshToken);
-      chatUrl.searchParams.set("refreshToken", refreshToken);
+  const buildWorkspaceUrl = () => {
+    const params = new URLSearchParams();
+    params.set("from", "portal");
+    if (user?.name) {
+      params.set("u", user.name);
     }
-
-    if (user) {
-      chatUrl.searchParams.set("user", JSON.stringify(user));
-      chatUrl.searchParams.set("user_id", user.id);
-      chatUrl.searchParams.set("username", user.username ?? user.name);
-    }
-
-    chatUrl.searchParams.set("source", "8ms-portal");
-
-    return chatUrl.toString();
+    return `${ACCESS_API_PATH}?${params.toString()}`;
   };
 
   const handleAccessApi = async () => {
-    let accessToken = token;
-
-    if (!accessToken && refreshToken) {
-      accessToken = await refreshSession();
-    }
-
-    if (!accessToken) {
-      router.push("/auth/login");
+    // 已登录：直接同源跳转到 Vue 工作区聊天页；token 由 localStorage 共享。
+    if (token) {
+      window.location.assign(buildWorkspaceUrl());
       return;
     }
 
-    window.open(buildChatUrl(accessToken), "_blank", "noopener,noreferrer");
+    // access token 失效但 refresh token 还在：尝试静默续签后再跳。
+    if (refreshToken) {
+      const refreshed = await refreshSession();
+      if (refreshed) {
+        window.location.assign(buildWorkspaceUrl());
+        return;
+      }
+    }
+
+    // 未登录或续签失败：跳到登录页。
+    router.push("/auth/login");
   };
 
   if (loading) {

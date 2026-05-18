@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useAuthStore } from "@/lib/store/auth-store";
-import { Globe, LogOut, Menu, X } from "lucide-react";
+import { Globe, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import type { Locale } from "@/i18n/config";
 
@@ -49,6 +49,15 @@ export default function Header() {
   const switchLocale = () => {
     router.push(`/${targetLocale}${pathname}`);
   };
+
+  // 已登录用户点击账号/工作台按钮跳转到 Vue 工作区聊天页。
+  // /console/* 由 nginx 反代到独立 Vue 服务，必须用 <a href> 做硬跳转，
+  // 不能用 next 的 <Link>（Next 路由表里没有这个前缀）。
+  // SSO：token 已通过 storeAuthSession 写入同源 localStorage，Vue 端免登录。
+  // 安全：URL 上只附带 username（埋点/欢迎语用），绝不携带密码。
+  const workspaceHref = user
+    ? `/console/chat?from=portal&u=${encodeURIComponent(user.name)}`
+    : "/console/chat";
 
   return (
     <header className="fixed left-0 right-0 top-0 z-50">
@@ -121,11 +130,19 @@ export default function Header() {
 
               {user ? (
                 <div className="hidden items-center gap-2.5 lg:flex">
-                  <span className="max-w-[9rem] truncate text-sm text-slate-300">
-                    {user.name}
-                  </span>
+                  <a
+                    href={workspaceHref}
+                    title={tc("openWorkspace")}
+                    aria-label={tc("openWorkspace")}
+                    className="header-account-link inline-flex max-w-[14rem] items-center gap-1.5 truncate rounded-full px-3 py-2 text-sm text-slate-200 transition-all duration-300 hover:text-white"
+                  >
+                    <LayoutDashboard className="h-4 w-4 shrink-0 text-indigo-300" />
+                    <span className="truncate">{user.name}</span>
+                  </a>
                   <button
                     onClick={logout}
+                    title={tc("logout")}
+                    aria-label={tc("logout")}
                     className="header-utility rounded-full p-2.5 text-slate-400 transition-all duration-300 hover:text-white"
                   >
                     <LogOut className="h-4 w-4" />
@@ -194,15 +211,30 @@ export default function Header() {
 
             <div className="mt-4 flex flex-col gap-2 border-t border-white/8 pt-4">
               {user ? (
-                <button
-                  onClick={() => {
-                    logout();
-                    setMobileOpen(false);
-                  }}
-                  className="rounded-xl px-3 py-2 text-sm text-slate-400"
-                >
-                  {tc("logout")}
-                </button>
+                <>
+                  <a
+                    href={workspaceHref}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-white/[0.06] hover:text-white"
+                  >
+                    <span className="inline-flex items-center gap-2 truncate">
+                      <LayoutDashboard className="h-4 w-4 shrink-0 text-indigo-300" />
+                      <span className="truncate">{user.name}</span>
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      {tc("openWorkspace")}
+                    </span>
+                  </a>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileOpen(false);
+                    }}
+                    className="rounded-xl px-3 py-2 text-left text-sm text-slate-400 hover:bg-white/[0.06] hover:text-white"
+                  >
+                    {tc("logout")}
+                  </button>
+                </>
               ) : (
                 <>
                   <Link

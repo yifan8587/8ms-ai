@@ -692,7 +692,7 @@ export NEXT_TELEMETRY_DISABLED=1
 # 把 portal.env 里的 NEXT_PUBLIC_* 变量在 build 之前 export，
 # 否则它们不会被内联进客户端 bundle，浏览器侧拿不到。
 # 关键变量：
-#   NEXT_PUBLIC_POST_LOGIN_REDIRECT=/console/   登录后跳转 Vue 管理后台
+#   NEXT_PUBLIC_POST_LOGIN_REDIRECT=/console/chat   登录后跳转 Vue 工作区聊天页
 #   NEXT_PUBLIC_SITE_URL                        SEO / 邮件链接用
 #   NEXT_PUBLIC_SITE_NAME                       网页 title
 set -a
@@ -704,7 +704,9 @@ npm run build 2>&1 | tail -10
 [[ -d "${PORTAL_ROOT}/.next" ]] || error "Next.js 构建失败：未发现 .next 目录"
 info "Next.js 门户构建完成 -> ${PORTAL_ROOT}/.next/"
 # 自检：客户端 bundle 应该包含我们刚才注入的 redirect 目标
-if grep -rq "/console/" "${PORTAL_ROOT}/.next/static" 2>/dev/null; then
+if grep -rq "/console/chat" "${PORTAL_ROOT}/.next/static" 2>/dev/null; then
+  info "客户端 bundle 已注入 NEXT_PUBLIC_POST_LOGIN_REDIRECT=/console/chat"
+elif grep -rq "/console/" "${PORTAL_ROOT}/.next/static" 2>/dev/null; then
   info "客户端 bundle 已注入 NEXT_PUBLIC_POST_LOGIN_REDIRECT=/console/"
 fi
 

@@ -178,7 +178,7 @@ sudo bash deploy/install.sh --fresh --drop-db --drop-cert -y \
 | 4  | rsync 同步 AIprogram (Django + ai-frontend) 源代码 |
 | 5  | 创建 `/opt/aiprogram/venv` 并 `pip install -r requirements.txt` |
 | 6  | 生成 `/etc/aiprogram/backend.env`（随机 SECRET_KEY / 随机 DB 密码） |
-| 7  | 生成 `/etc/8ms-portal/portal.env`（指向 127.0.0.1:8090 的后端 + `NEXT_PUBLIC_POST_LOGIN_REDIRECT=/console/`） |
+| 7  | 生成 `/etc/8ms-portal/portal.env`（指向 127.0.0.1:8090 的后端 + `NEXT_PUBLIC_POST_LOGIN_REDIRECT=/console/chat`） |
 | 8  | 创建 MySQL 数据库 `aiproject` 与用户 `aiprogram` |
 | 9  | `python manage.py migrate / collectstatic` |
 | 10 | 创建超级管理员 `admin / Admin@123456`（**部署后立刻改密**） |
