@@ -1,0 +1,48 @@
+[Unit]
+Description=AI 智枢平台 - Vue 管理后台 (ai-frontend SPA, 监听 __CONSOLE_PORT__)
+Documentation=https://www.8ms.ai/console/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__RUN_USER__
+Group=__RUN_GROUP__
+WorkingDirectory=__BACKEND_ROOT__/frontend
+Environment=NODE_ENV=production
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+# 用 `serve`（npm 包）做静态 SPA 服务器：
+#   -s          single-page app 模式，404 自动 fallback 到 /index.html
+#   -l tcp://...  仅监听本机回环，由 nginx 反代
+#   --no-clipboard / --no-port-switching  服务器场景下避免交互行为
+#
+# 由于 Vue admin 已经使用 --base=/console/ 构建：
+#   index.html 中所有静态资源路径都是 /console/assets/foo.js
+# nginx 的 `proxy_pass http://127.0.0.1:__CONSOLE_PORT__/;`（带尾斜杠）
+# 会把 URI 前缀 /console/ 剥离后再转发到 serve，于是：
+#   /console/                  → /                  → dist/index.html
+#   /console/assets/foo.js     → /assets/foo.js     → dist/assets/foo.js
+#   /console/admin/dashboard   → /admin/dashboard   → SPA fallback → index.html
+ExecStart=__SERVE_BIN__ -s __CONSOLE_DIST__ -l tcp://127.0.0.1:__CONSOLE_PORT__ --no-clipboard --no-port-switching --single
+
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+Restart=always
+RestartSec=5
+
+StandardOutput=append:__BACKEND_ROOT__/logs/frontend.out.log
+StandardError=append:__BACKEND_ROOT__/logs/frontend.err.log
+
+# ── 安全加固 ──
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=__BACKEND_ROOT__
+
+[Install]
+WantedBy=multi-user.target

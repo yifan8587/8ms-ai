@@ -1,0 +1,47 @@
+[Unit]
+Description=AI 智枢平台 - Django 后端 (Gunicorn)
+After=network-online.target mysql.service
+Wants=network-online.target mysql.service
+
+[Service]
+Type=notify
+User=__RUN_USER__
+Group=__RUN_GROUP__
+WorkingDirectory=__BACKEND_ROOT__/backend
+EnvironmentFile=/etc/aiprogram/backend.env
+Environment=DJANGO_SETTINGS_MODULE=aiproject.settings_production
+Environment=PYTHONUNBUFFERED=1
+
+ExecStart=__BACKEND_ROOT__/venv/bin/gunicorn \
+  --workers 3 \
+  --worker-class sync \
+  --threads 2 \
+  --timeout 300 \
+  --graceful-timeout 30 \
+  --keep-alive 30 \
+  --bind __BACKEND_BIND__ \
+  --access-logfile __BACKEND_ROOT__/logs/access.log \
+  --error-logfile __BACKEND_ROOT__/logs/error.log \
+  --capture-output \
+  aiproject.wsgi:application
+
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+Restart=always
+RestartSec=5
+
+StandardOutput=append:__BACKEND_ROOT__/logs/backend.out.log
+StandardError=append:__BACKEND_ROOT__/logs/backend.err.log
+
+# ── 安全加固 ──
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=__BACKEND_ROOT__ /etc/aiprogram
+
+[Install]
+WantedBy=multi-user.target

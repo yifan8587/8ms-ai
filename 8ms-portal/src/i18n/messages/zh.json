@@ -1,0 +1,325 @@
+{
+  "common": {
+    "brand": "8MS",
+    "slogan": "一个接口，全部模型",
+    "getStarted": "立即开始",
+    "contactSales": "联系销售",
+    "learnMore": "了解更多",
+    "login": "登录",
+    "register": "注册",
+    "logout": "退出",
+    "backToHome": "返回首页",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "search": "搜索",
+    "allCategories": "全部分类"
+  },
+  "nav": {
+    "home": "首页",
+    "resources": "大模型中心",
+    "knowledge": "知识库",
+    "pricing": "价格",
+    "models": "账号服务",
+    "accelerate": "接入加速"
+  },
+  "footer": {
+    "product": "产品",
+    "productModels": "大模型",
+    "productAccelerate": "接入加速",
+    "productAccounts": "账号服务",
+    "productPricing": "价格",
+    "resources": "支持",
+    "company": "公司",
+    "about": "关于我们",
+    "tickets": "工单系统",
+    "docs": "文档中心",
+    "blog": "博客",
+    "status": "服务状态",
+    "terms": "服务条款",
+    "privacy": "隐私政策",
+    "contact": "联系我们",
+    "copyright": "© 2026 8MS.AI. 保留所有权利。"
+  },
+  "home": {
+    "hero": {
+      "title": "一个接口，接入全球",
+      "titleHighlight": "AI 大模型",
+      "description": "统一 API 网关，聚合 500+ 主流大模型。CN2 专线直连，低时延、高可用，5 分钟极速接入。",
+      "cta": "免费注册",
+      "ctaSecondary": "查看文档"
+    },
+    "stats": {
+      "models": "500+",
+      "modelsLabel": "支持模型",
+      "uptime": "99.99%",
+      "uptimeLabel": "服务可用性",
+      "latency": "<50ms",
+      "latencyLabel": "平均时延",
+      "developers": "10,000+",
+      "developersLabel": "开发者"
+    },
+    "features": {
+      "title": "为什么选择 8MS",
+      "subtitle": "企业级 AI 基础设施，为您的业务提供可靠支撑",
+      "unified": {
+        "title": "统一模型接入",
+        "description": "一个 API Key 访问 GPT、Claude、Gemini、DeepSeek 等 500+ 模型，无需逐一对接。"
+      },
+      "fast": {
+        "title": "CN2 专线加速",
+        "description": "全球 24 节点 CN2 直连，时延低至 50ms，告别网络波动，体验丝滑调用。"
+      },
+      "reliable": {
+        "title": "企业级高可用",
+        "description": "自动故障转移、负载均衡、智能路由，99.99% SLA 保障业务不中断。"
+      },
+      "cost": {
+        "title": "成本优化",
+        "description": "灵活计费，按量付费，最低官方价格 3 折起，大幅降低 AI 调用成本。"
+      }
+    },
+    "products": {
+      "title": "产品与服务",
+      "subtitle": "覆盖 AI 接入全链路，满足各类业务场景",
+      "resources": {
+        "title": "AI 资源中心",
+        "description": "聚合全球主流大模型 API，一站式浏览、对比、接入。"
+      },
+      "models": {
+        "title": "大模型账号服务",
+        "description": "官方渠道大模型账号，SVIP 企业级服务，专属技术支持。"
+      },
+      "accelerate": {
+        "title": "加速接入方案",
+        "description": "SD-WAN 智能加速，全球骨干网直连，显著降低 API 调用时延。"
+      },
+      "knowledge": {
+        "title": "知识库",
+        "description": "技术文档、使用指南、最佳实践，助您快速上手。"
+      }
+    },
+    "cta": {
+      "title": "准备好开始了吗？",
+      "description": "注册即送免费额度，5 分钟完成接入",
+      "button": "免费注册"
+    }
+  },
+  "resources": {
+    "title": "AI 大模型资源中心",
+    "subtitle": "聚合全球主流 AI 大模型，一站式接入",
+    "categories": {
+      "all": "全部",
+      "llm": "大语言模型",
+      "multimodal": "多模态",
+      "coding": "编程开发",
+      "image": "图像生成",
+      "video": "视频生成",
+      "audio": "语音处理",
+      "chat": "智能对话",
+      "ppt": "PPT 生成"
+    },
+    "badges": {
+      "free": "免费",
+      "metered": "按量计费"
+    },
+    "empty": "当前分类下暂无可展示模型",
+    "loadFailed": "模型列表暂时不可用，请稍后重试",
+    "viewDocs": "查看文档",
+    "accessApi": "接入 API"
+  },
+  "knowledge": {
+    "title": "知识库",
+    "subtitle": "技术文档、使用指南与最佳实践",
+    "searchPlaceholder": "搜索文章...",
+    "readMore": "阅读全文",
+    "publishedAt": "发布于",
+    "prevArticle": "上一篇",
+    "nextArticle": "下一篇",
+    "relatedArticles": "相关文章",
+    "categories": {
+      "all": "全部",
+      "quickstart": "快速开始",
+      "tutorial": "教程",
+      "api": "API 文档",
+      "faq": "常见问题"
+    }
+  },
+  "pricing": {
+    "title": "价格方案",
+    "subtitle": "五档套餐覆盖试用、接入、增长、渠道与定制场景",
+    "monthly": "月付",
+    "yearly": "年付",
+    "yearlyHint": "年付相当于月费 10 个月，赠送 2 个月",
+    "popular": "最受欢迎",
+    "features": "每月包含",
+    "subscribe": "立即订阅",
+    "contactSales": "联系销售",
+    "freeLabel": "免费",
+    "customLabel": "定制",
+    "perMonth": "/月",
+    "perYear": "/年",
+    "faq": {
+      "title": "常见问题",
+      "q1": "如何选择合适的套餐？",
+      "a1": "免费版适合试用，标准版适合轻量接入，企业版适合稳定业务调用，渠道版适合高并发分发与子账户场景，定制版适合专线、品牌与深度集成需求。",
+      "q2": "支持哪些付款方式？",
+      "a2": "支持支付宝、微信支付、银行转账，企业客户支持对公打款。年付按 10 个月计费，额外赠送 2 个月。",
+      "q3": "是否可以随时更换套餐？",
+      "a3": "可以随时升级到更高套餐，差价按当前周期折算；降级或切换到定制方案可联系客服协助安排下一个计费周期生效。"
+    }
+  },
+  "models": {
+    "title": "大模型账号服务",
+    "subtitle": "官方渠道，企业级大模型账号一站式供应",
+    "hero": {
+      "title": "企业级大模型账号",
+      "titleHighlight": "一站式供应",
+      "description": "提供 OpenAI、Anthropic、Google 等官方渠道大模型账号，SVIP 企业级权限，专属技术支持，让您专注于业务创新。"
+    },
+    "advantages": {
+      "title": "服务优势",
+      "official": {
+        "title": "官方正规渠道",
+        "description": "直接对接模型厂商官方渠道，账号安全有保障，避免封号风险。"
+      },
+      "enterprise": {
+        "title": "企业级权限",
+        "description": "SVIP 级别访问权限，更高速率限制，优先队列，满足企业高并发需求。"
+      },
+      "support": {
+        "title": "专属技术支持",
+        "description": "7×24 小时技术团队支持，专属对接人，快速响应您的任何问题。"
+      },
+      "flexible": {
+        "title": "灵活配置",
+        "description": "按需定制账号规格，支持多部门独立子账号，统一管理与计费。"
+      }
+    },
+    "audience": {
+      "title": "适用场景",
+      "startup": {
+        "title": "AI 创业团队",
+        "description": "快速获取主流模型能力，降低接入门槛，专注产品迭代。"
+      },
+      "enterprise": {
+        "title": "企业 AI 部门",
+        "description": "统一采购管理，合规审计，满足企业内部 AI 应用需求。"
+      },
+      "developer": {
+        "title": "独立开发者",
+        "description": "低成本获取优质模型账号，加速个人项目开发。"
+      }
+    },
+    "cta": {
+      "title": "获取专属方案",
+      "description": "联系我们的销售团队，为您定制最优的大模型账号方案",
+      "button": "立即咨询"
+    }
+  },
+  "accelerate": {
+    "title": "加速接入方案",
+    "subtitle": "SD-WAN 智能加速，全球低时延 AI 模型访问",
+    "hero": {
+      "title": "AI 接入",
+      "titleHighlight": "全球加速方案",
+      "description": "基于 DNS+SDN+SDWAN+Edge+Local IP 的智能路由，配合 BGP+3C 优化，为您提供全球范围内最低时延的 AI 大模型访问接入，显著降低业务调用时延。"
+    },
+    "architecture": {
+      "title": "架构方案",
+      "userSide": "用户侧",
+      "edgeNode": "边缘加速节点",
+      "backbone": "BGP 跨境骨干网",
+      "aiProvider": "大模型厂商"
+    },
+    "comparison": {
+      "title": "性能对比",
+      "metric": "指标",
+      "direct": "直接访问",
+      "accelerated": "加速接入",
+      "latency": "平均时延",
+      "latencyDirect": "200-500ms",
+      "latencyAccelerated": "8-120ms",
+      "stability": "连接稳定性",
+      "stabilityDirect": "波动较大",
+      "stabilityAccelerated": "稳定可靠",
+      "availability": "可用性",
+      "availabilityDirect": "95%",
+      "availabilityAccelerated": "99.99%",
+      "firstToken": "首 Token 时间",
+      "firstTokenDirect": "1-3s",
+      "firstTokenAccelerated": "0.3-0.8s"
+    },
+    "features": {
+      "title": "核心优势",
+      "smartRouting": {
+        "title": "智能路由",
+        "description": "AI 驱动的路由优化，实时选择最优链路，确保每次请求都走最快通道。"
+      },
+      "globalNodes": {
+        "title": "全球节点覆盖",
+        "description": "40+ 全球专线加速节点，80+ 边缘加速节点，60+ 原生家宽 IP 节点。"
+      },
+      "autoFailover": {
+        "title": "自动故障切换",
+        "description": "多链路冗余备份，故障毫秒级切换，保障业务连续性。"
+      },
+      "transparent": {
+        "title": "透明接入",
+        "description": "付费账号自动获得对应的加速服务，5Mbps 起步，支持定制化。"
+      }
+    },
+    "cta": {
+      "title": "拒绝卡顿，体验极速",
+      "description": "联系我们获取加速方案试用，感受毫秒级的 AI 调用体验",
+      "button": "申请试用"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "登录",
+      "subtitle": "登录您的 8MS 账号",
+      "username": "用户名",
+      "usernamePlaceholder": "请输入用户名",
+      "password": "密码",
+      "passwordPlaceholder": "请输入密码",
+      "submit": "登录",
+      "noAccount": "还没有账号？",
+      "goRegister": "立即注册",
+      "forgotPassword": "忘记密码？"
+    },
+    "register": {
+      "title": "注册",
+      "subtitle": "创建 8MS 账号，免费开始使用",
+      "name": "用户名",
+      "namePlaceholder": "请输入用户名",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入邮箱",
+      "password": "密码",
+      "passwordPlaceholder": "请输入密码（至少 8 位）",
+      "confirmPassword": "确认密码",
+      "confirmPasswordPlaceholder": "请再次输入密码",
+      "agree": "我已阅读并同意",
+      "terms": "服务条款",
+      "and": "和",
+      "privacy": "隐私政策",
+      "submit": "注册",
+      "hasAccount": "已有账号？",
+      "goLogin": "立即登录"
+    },
+    "errors": {
+      "usernameRequired": "请输入用户名",
+      "usernameMin": "用户名至少 3 位",
+      "usernameFormat": "用户名只能包含字母、数字和下划线",
+      "emailRequired": "请输入邮箱",
+      "emailInvalid": "请输入有效的邮箱地址",
+      "passwordRequired": "请输入密码",
+      "passwordMin": "密码至少 8 位",
+      "passwordFormat": "密码需同时包含字母和数字",
+      "confirmPasswordRequired": "请再次输入密码",
+      "passwordMismatch": "两次密码不一致",
+      "nameRequired": "请输入用户名",
+      "agreeRequired": "请同意服务条款",
+      "unknown": "请求失败，请稍后重试"
+    }
+  }
+}

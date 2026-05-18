@@ -1,0 +1,37 @@
+[Unit]
+Description=8MS.AI 前端门户 (Next.js / 8ms_code)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__RUN_USER__
+Group=__RUN_GROUP__
+WorkingDirectory=__PORTAL_ROOT__
+EnvironmentFile=/etc/8ms-portal/portal.env
+Environment=NODE_ENV=production
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+# next start 监听本机端口，由 nginx 反向代理
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -p __PORTAL_PORT__
+
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+Restart=always
+RestartSec=5
+
+StandardOutput=append:__PORTAL_ROOT__/logs/portal.out.log
+StandardError=append:__PORTAL_ROOT__/logs/portal.err.log
+
+# ── 安全加固 ──
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=__PORTAL_ROOT__ /etc/8ms-portal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="84" viewBox="0 0 320 84" fill="none">
+  <defs>
+    <linearGradient id="panelBg" x1="18" y1="8" x2="92" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1224"/>
+      <stop offset="1" stop-color="#09111F"/>
+    </linearGradient>
+    <linearGradient id="panelStroke" x1="6" y1="6" x2="84" y2="84" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8" stop-opacity=".55"/>
+      <stop offset=".55" stop-color="#818CF8" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#0F172A" stop-opacity=".4"/>
+    </linearGradient>
+    <radialGradient id="panelGlowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(26 22) rotate(55) scale(29 24)">
+      <stop stop-color="#38BDF8" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#38BDF8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="panelGlowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(58 56) rotate(30) scale(32 25)">
+      <stop stop-color="#C084FC" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#C084FC" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="loopStroke" x1="16" y1="26" x2="95" y2="55" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A5F3FC"/>
+      <stop offset=".42" stop-color="#60A5FA"/>
+      <stop offset=".72" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#F0ABFC"/>
+    </linearGradient>
+    <linearGradient id="ringStroke" x1="16" y1="14" x2="70" y2="70" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DD3FC" stop-opacity=".78"/>
+      <stop offset="1" stop-color="#A78BFA" stop-opacity=".28"/>
+    </linearGradient>
+    <linearGradient id="accentLine" x1="0" y1="0" x2="122" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#818CF8"/>
+    </linearGradient>
+    <linearGradient id="accentText" x1="189" y1="12" x2="238" y2="39" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DD3FC"/>
+      <stop offset="1" stop-color="#A5B4FC"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(0 2)">
+    <rect x="0.75" y="0.75" width="84.5" height="78.5" rx="24" fill="url(#panelBg)" stroke="url(#panelStroke)" stroke-width="1.5"/>
+    <rect x="1.5" y="1.5" width="83" height="77" rx="23.25" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+    <ellipse cx="26" cy="22" rx="30" ry="24" fill="url(#panelGlowA)"/>
+    <ellipse cx="58" cy="56" rx="32" ry="26" fill="url(#panelGlowB)"/>
+    <circle cx="43" cy="40" r="27.5" stroke="url(#ringStroke)" stroke-width="1.5" opacity=".74"/>
+    <circle cx="43" cy="40" r="18.5" stroke="url(#ringStroke)" stroke-width="1.2" opacity=".44"/>
+    <path d="M14.5 40C21.5 27.5 31 27.5 40.5 40C50 52.5 59.5 52.5 69 40C78.5 27.5 88 27.5 95.5 40C88 52.5 78.5 52.5 69 40C59.5 27.5 50 27.5 40.5 40C31 52.5 21.5 52.5 14.5 40Z" stroke="url(#loopStroke)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M10 58C24 49.5 43 49 63 56.5C70.5 59.2 78 60.2 84 59.4" stroke="url(#loopStroke)" stroke-width="1.8" stroke-linecap="round" opacity=".54"/>
+    <circle cx="19" cy="17" r="2.2" fill="#7DD3FC" opacity=".85"/>
+    <circle cx="76" cy="20" r="1.8" fill="#C4B5FD" opacity=".88"/>
+    <circle cx="68" cy="62" r="2" fill="#F0ABFC" opacity=".74"/>
+  </g>
+
+  <g transform="translate(105 14)">
+    <text x="0" y="30" fill="#F8FAFC" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="-1.8">8MS<tspan fill="url(#accentText)">.AI</tspan></text>
+    <rect x="0" y="39" width="126" height="1.5" rx=".75" fill="url(#accentLine)" opacity=".88"/>
+    <text x="0" y="57" fill="rgba(203,213,225,0.82)" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" font-weight="600" letter-spacing="2.8">GLOBAL AI GATEWAY</text>
+  </g>
+</svg>
