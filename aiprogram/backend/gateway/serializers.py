@@ -5,11 +5,13 @@ from .models import APIBackend, BackendGroup, RoutingRule, RequestLog
 class APIBackendSerializer(serializers.ModelSerializer):
     api_key_masked = serializers.SerializerMethodField()
     groups_info = serializers.SerializerMethodField()
+    backend_type_display = serializers.CharField(source='get_backend_type_display', read_only=True)
 
     class Meta:
         model = APIBackend
         fields = (
-            'id', 'name', 'description', 'base_url', 'api_key_masked',
+            'id', 'name', 'description', 'backend_type', 'backend_type_display',
+            'base_url', 'api_key_masked',
             'weight', 'max_rpm', 'max_concurrent', 'timeout_seconds',
             'health_status', 'consecutive_failures',
             'last_health_check', 'last_failure_at',
@@ -33,7 +35,8 @@ class APIBackendCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = APIBackend
         fields = (
-            'name', 'description', 'base_url', 'api_key',
+            'name', 'description', 'backend_type',
+            'base_url', 'api_key',
             'weight', 'max_rpm', 'max_concurrent', 'timeout_seconds',
             'pricing_multiplier', 'stats_request_multiplier',
             'extra_headers', 'is_active',

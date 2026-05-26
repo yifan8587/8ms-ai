@@ -333,38 +333,40 @@ class MyModelPricesView(APIView):
 
 
 class SyncModelsView(APIView):
-    """从 API 后端同步模型。支持 ?backend_id=X 指定后端"""
+    """从 API 后端同步模型。支持 ?backend_id=X 指定后端。
+
+    底层走 protocols.get_adapter(backend).list_models()，自动适配 OpenAI 与
+    Anthropic 两种协议，Anthropic 无 /v1/models 时退化为内置 Claude 默认列表。
+    """
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         from gateway.models import APIBackend as GWBackend
+        from gateway.protocols import get_adapter
         backend_id = request.data.get('backend_id') or request.query_params.get('backend_id')
         try:
             if backend_id:
                 backend = GWBackend.objects.get(pk=backend_id)
             else:
                 backend, _ = select_backend('', request.user)
-            config = get_backend_config(backend)
 
-            resp = requests.get(
-                f"{config['base_url']}/models",
-                headers=config['headers'],
-                timeout=config['timeout']
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            models_data = data.get('data', [])
+            if backend is None:
+                return Response({'code': 400, 'msg': '当前没有可用的 API 后端，请先在网关中配置'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            adapter = get_adapter(backend)
+            models_data = adapter.list_models() or []
             created_count = 0
             skipped_count = 0
             merged_count = 0
             for m in models_data:
-                mid = m['id']
+                mid = m.get('id')
+                if not mid:
+                    continue
                 existing = AIModel.objects.filter(model_id=mid).first()
                 if existing:
                     skipped_count += 1
                     if backend:
-                        # 来自同一后端（可能是不同 key）不重复新增模型
-                        # 但聚合到来源后端 M2M 中，便于展示"多来源"
                         if not existing.source_backend:
                             existing.source_backend = backend
                             existing.save(update_fields=['source_backend'])
@@ -373,7 +375,7 @@ class SyncModelsView(APIView):
                             merged_count += 1
                     continue
 
-                pricing = m.get('pricing', {})
+                pricing = m.get('pricing') or {}
                 pm = Decimal('1')
                 if backend is not None:
                     x = getattr(backend, 'pricing_multiplier', None)
@@ -386,7 +388,7 @@ class SyncModelsView(APIView):
                     model_id=mid,
                     name=m.get('name', mid),
                     description=m.get('description', ''),
-                    context_length=m.get('context_length', 4096),
+                    context_length=int(m.get('context_length') or 4096),
                     is_free=(pp == 0 and pc == 0),
                     pricing_prompt=pp,
                     pricing_completion=pc,
@@ -397,7 +399,7 @@ class SyncModelsView(APIView):
                 if backend:
                     new_model.source_backends.add(backend)
                 created_count += 1
-            src = f' (来源: {backend.name})' if backend else ''
+            src = f' (来源: {backend.name} / {adapter.backend_type})'
             return Response({
                 'code': 200,
                 'msg': (f'同步完成{src}，新增 {created_count} 个，'
@@ -508,7 +510,8 @@ class ChatView(APIView):
         messages_payload.append({'role': 'user', 'content': user_content})
 
         backend, rule = select_backend(model_id, request.user, ai_model.business_type)
-        config = get_backend_config(backend)
+        from gateway.protocols import get_adapter
+        adapter = get_adapter(backend) if backend else None
 
         payload = {
             'model': model_id,
@@ -527,44 +530,49 @@ class ChatView(APIView):
                 req_error = ''
                 stream_usage = {}
                 try:
-                    with requests.post(
-                        f"{config['base_url']}/chat/completions",
-                        headers=config['headers'],
-                        json=payload,
-                        stream=True,
-                        timeout=config['timeout']
-                    ) as resp:
-                        req_status_code = resp.status_code
-                        if resp.status_code != 200:
-                            req_success = False
-                            err_body = resp.text
-                            try:
-                                err_msg = resp.json().get('error', {}).get('message', err_body)
-                            except Exception:
-                                err_msg = err_body
-                            req_error = err_msg
-                            report_failure(backend, err_msg)
-                            yield f"data: {json.dumps({'error': f'[{resp.status_code}] {err_msg}'})}\n\n"
-                            return
-                        for line in resp.iter_lines():
-                            if line:
-                                line_str = line.decode('utf-8')
-                                if line_str.startswith('data: '):
-                                    chunk = line_str[6:]
-                                    if chunk == '[DONE]':
-                                        break
-                                    try:
-                                        chunk_data = json.loads(chunk)
-                                        if chunk_data.get('usage'):
-                                            stream_usage = chunk_data['usage']
-                                        choices = chunk_data.get('choices') or []
-                                        if choices:
-                                            delta = choices[0].get('delta', {}).get('content', '')
-                                            if delta:
-                                                full_content += delta
-                                                yield f"data: {json.dumps({'content': delta, 'conversation_id': conversation.id})}\n\n"
-                                    except (json.JSONDecodeError, KeyError, IndexError):
-                                        pass
+                    if adapter is None:
+                        raise RuntimeError('当前没有可用的 API 后端')
+
+                    # 适配器统一产出 OpenAI 风格 SSE 行，下面解析出 delta.content
+                    # 转成业务自定义 SSE 帧 {content, conversation_id}
+                    for sse_line in adapter.chat_completion_stream(payload, stream_usage):
+                        if not sse_line or not sse_line.startswith('data: '):
+                            continue
+                        chunk = sse_line[6:].strip()
+                        if chunk == '[DONE]':
+                            break
+                        try:
+                            chunk_data = json.loads(chunk)
+                        except (json.JSONDecodeError, TypeError):
+                            continue
+                        if not isinstance(chunk_data, dict):
+                            continue
+                        # 适配器把 usage 也放在 chunk 里，再追加合并一次
+                        if chunk_data.get('usage'):
+                            stream_usage.update(chunk_data['usage'])
+                        choices = chunk_data.get('choices') or []
+                        if not choices:
+                            continue
+                        delta = (choices[0] or {}).get('delta') or {}
+                        text = delta.get('content') or ''
+                        if text:
+                            full_content += text
+                            yield f"data: {json.dumps({'content': text, 'conversation_id': conversation.id})}\n\n"
+                        thinking = delta.get('reasoning_content') or ''
+                        if thinking:
+                            yield f"data: {json.dumps({'reasoning_content': thinking, 'conversation_id': conversation.id})}\n\n"
+
+                    # adapter 把上游错误也塞在 usage_out 里
+                    err_code = stream_usage.pop('__status_code__', None)
+                    err_text = stream_usage.pop('__error__', None)
+                    if err_code or err_text:
+                        req_success = False
+                        req_status_code = err_code or 502
+                        req_error = err_text or 'upstream error'
+                        report_failure(backend, req_error)
+                        yield (
+                            f"data: {json.dumps({'error': f'[{req_status_code}] {req_error}'})}\n\n"
+                        )
                 except Exception as e:
                     req_success = False
                     req_error = str(e)
@@ -615,42 +623,29 @@ class ChatView(APIView):
         else:
             start_time = time.time()
             try:
-                resp = requests.post(
-                    f"{config['base_url']}/chat/completions",
-                    headers=config['headers'],
-                    json=payload,
-                    timeout=config['timeout']
-                )
+                if adapter is None:
+                    return Response(
+                        {'code': 503, 'msg': '当前没有可用的 API 后端'},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE
+                    )
+                status_code, result, err_msg = adapter.chat_completion(payload)
                 elapsed_ms = int((time.time() - start_time) * 1000)
 
-                if resp.status_code != 200:
-                    report_failure(backend, resp.text[:500])
-                    try:
-                        err_data = resp.json()
-                        err_msg = err_data.get('error', {}).get('message', resp.text)
-                        err_meta = err_data.get('error', {}).get('metadata', {})
-                        if err_meta.get('raw'):
-                            try:
-                                raw_err = json.loads(err_meta['raw'])
-                                err_msg = raw_err.get('error', {}).get('message', err_msg)
-                            except Exception:
-                                pass
-                    except Exception:
-                        err_msg = resp.text
+                if status_code != 200 or result is None:
+                    report_failure(backend, (err_msg or '')[:500])
                     _log_request(
                         user=request.user, backend=backend, rule=rule,
                         model_id=model_id, is_stream=False, business_type=ai_model.business_type,
                         response_time_ms=elapsed_ms,
-                        status_code=resp.status_code,
+                        status_code=status_code,
                         is_success=False,
-                        error_message=err_msg[:500],
+                        error_message=(err_msg or '')[:500],
                     )
                     return Response(
-                        {'code': resp.status_code, 'msg': f'[{resp.status_code}] {err_msg}'},
+                        {'code': status_code, 'msg': f'[{status_code}] {err_msg}'},
                         status=status.HTTP_502_BAD_GATEWAY
                     )
 
-                result = resp.json()
                 ai_content = result['choices'][0]['message']['content']
                 usage_info = result.get('usage', {})
                 prompt_tokens = usage_info.get('prompt_tokens', 0)

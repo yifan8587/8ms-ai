@@ -174,30 +174,33 @@ def select_backend(model_id, user, business_type=None):
 
 
 def get_backend_config(backend):
-    """获取后端的请求配置"""
+    """获取后端的请求配置（向后兼容）。
+
+    新逻辑统一通过 protocols.get_adapter(backend) 调用，由各适配器自己
+    构造 headers / endpoint，这里仅保留 base_url / headers / timeout 三元
+    组以兼容尚未迁移的旧调用点。
+    """
+    from .protocols import get_adapter
     if backend:
-        headers = {
-            'Authorization': f"Bearer {backend.api_key}",
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'http://localhost:8000',
-            'X-Title': 'AIProject',
-        }
-        if backend.extra_headers:
-            headers.update(backend.extra_headers)
+        adapter = get_adapter(backend)
         return {
-            'base_url': backend.base_url.rstrip('/'),
-            'headers': headers,
-            'timeout': backend.timeout_seconds,
+            'base_url': adapter.base_url,
+            'headers': adapter.make_headers(),
+            'timeout': adapter.timeout,
+            'adapter': adapter,
+            'backend_type': adapter.backend_type,
         }
     return {
         'base_url': getattr(settings, 'OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1').rstrip('/'),
         'headers': {
             'Authorization': f"Bearer {getattr(settings, 'OPENROUTER_API_KEY', '')}",
             'Content-Type': 'application/json',
-            'HTTP-Referer': 'http://localhost:8000',
-            'X-Title': 'AIProject',
+            'HTTP-Referer': 'https://8ms.ai',
+            'X-Title': '8MS.AI',
         },
         'timeout': 60,
+        'adapter': None,
+        'backend_type': 'openai',
     }
 
 

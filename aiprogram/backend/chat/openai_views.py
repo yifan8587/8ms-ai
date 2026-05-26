@@ -336,7 +336,8 @@ class OpenAIChatCompletionsView(APIView):
                 typ="upstream_unavailable",
                 http_status=503,
             )
-        config = get_backend_config(backend)
+        from gateway.protocols import get_adapter
+        adapter = get_adapter(backend)
 
         payload = _build_upstream_chat_payload(model_id, body, stream, sanitized_messages)
 
@@ -344,7 +345,7 @@ class OpenAIChatCompletionsView(APIView):
             return self._stream(
                 request=request,
                 payload=payload,
-                config=config,
+                adapter=adapter,
                 backend=backend,
                 rule=rule,
                 ai_model=ai_model,
@@ -353,7 +354,7 @@ class OpenAIChatCompletionsView(APIView):
         return self._non_stream(
             request=request,
             payload=payload,
-            config=config,
+            adapter=adapter,
             backend=backend,
             rule=rule,
             ai_model=ai_model,
@@ -361,20 +362,14 @@ class OpenAIChatCompletionsView(APIView):
         )
 
     # ─── 非流式 ──────────────────────────────────────────────
-    def _non_stream(self, *, request, payload, config, backend, rule, ai_model, model_id):
+    def _non_stream(self, *, request, payload, adapter, backend, rule, ai_model, model_id):
         start_time = time.time()
         try:
-            resp = requests.post(
-                f"{config['base_url']}/chat/completions",
-                headers=config["headers"],
-                json=payload,
-                timeout=config["timeout"],
-            )
+            status_code, result, err_msg = adapter.chat_completion(payload)
             elapsed_ms = int((time.time() - start_time) * 1000)
 
-            if resp.status_code != 200:
-                report_failure(backend, resp.text[:500])
-                err_msg = self._extract_upstream_error(resp)
+            if status_code != 200 or result is None:
+                report_failure(backend, (err_msg or "")[:500])
                 _log_request(
                     user=request.user,
                     backend=backend,
@@ -383,23 +378,14 @@ class OpenAIChatCompletionsView(APIView):
                     is_stream=False,
                     business_type=ai_model.business_type,
                     response_time_ms=elapsed_ms,
-                    status_code=resp.status_code,
+                    status_code=status_code,
                     is_success=False,
-                    error_message=err_msg[:500],
+                    error_message=(err_msg or "")[:500],
                 )
                 return _openai_error(
-                    err_msg,
+                    err_msg or "upstream error",
                     typ="upstream_error",
-                    code=resp.status_code,
-                    http_status=status.HTTP_502_BAD_GATEWAY,
-                )
-
-            try:
-                result = resp.json()
-            except ValueError:
-                return _openai_error(
-                    "Upstream returned non-JSON response.",
-                    typ="upstream_error",
+                    code=status_code,
                     http_status=status.HTTP_502_BAD_GATEWAY,
                 )
 
@@ -451,7 +437,7 @@ class OpenAIChatCompletionsView(APIView):
             return _openai_error(str(e), typ="internal_error", http_status=500)
 
     # ─── 流式 ────────────────────────────────────────────────
-    def _stream(self, *, request, payload, config, backend, rule, ai_model, model_id):
+    def _stream(self, *, request, payload, adapter, backend, rule, ai_model, model_id):
         def event_stream():
             start_time = time.time()
             req_status_code = 200
@@ -459,58 +445,44 @@ class OpenAIChatCompletionsView(APIView):
             req_error = ""
             stream_usage: dict = {}
             try:
-                with requests.post(
-                    f"{config['base_url']}/chat/completions",
-                    headers=config["headers"],
-                    json=payload,
-                    stream=True,
-                    timeout=config["timeout"],
-                ) as resp:
-                    req_status_code = resp.status_code
-                    if resp.status_code != 200:
-                        req_success = False
-                        err_msg = self._extract_upstream_error(resp)
-                        req_error = err_msg[:500]
-                        report_failure(backend, req_error)
-                        yield (
-                            "data: "
-                            + json.dumps(
-                                {
-                                    "error": {
-                                        "message": err_msg,
-                                        "type": "upstream_error",
-                                        "code": resp.status_code,
-                                    }
-                                },
-                                ensure_ascii=False,
-                            )
-                            + "\n\n"
-                        )
-                        yield "data: [DONE]\n\n"
-                        return
+                upstream_sent_done = False
+                for line in adapter.chat_completion_stream(payload, stream_usage):
+                    if not line:
+                        continue
+                    if line.startswith("data: "):
+                        chunk = line[6:].strip()
+                        if chunk == "[DONE]":
+                            upstream_sent_done = True
+                            yield line if line.endswith("\n\n") else line + "\n\n"
+                            break
+                        try:
+                            chunk_data = json.loads(chunk)
+                            if isinstance(chunk_data, dict) and chunk_data.get("usage"):
+                                stream_usage.update(chunk_data["usage"])
+                        except (json.JSONDecodeError, TypeError):
+                            pass
+                    yield line if line.endswith("\n\n") else line + "\n\n"
 
-                    upstream_sent_done = False
-                    for line in resp.iter_lines(decode_unicode=True):
-                        if line is None:
-                            continue
-                        if not line:
-                            yield "\n"
-                            continue
-                        if line.startswith("data: "):
-                            chunk = line[6:].strip()
-                            if chunk == "[DONE]":
-                                upstream_sent_done = True
-                                yield line + "\n\n"
-                                break
-                            try:
-                                chunk_data = json.loads(chunk)
-                                if isinstance(chunk_data, dict) and chunk_data.get("usage"):
-                                    stream_usage = chunk_data["usage"]
-                            except (json.JSONDecodeError, TypeError):
-                                pass
-                        yield line + "\n\n"
-                    if not upstream_sent_done:
-                        yield "data: [DONE]\n\n"
+                # adapter 通过 stream_usage 把上游错误抛上来
+                err_code = stream_usage.pop("__status_code__", None)
+                err_text = stream_usage.pop("__error__", None)
+                if err_code or err_text:
+                    req_success = False
+                    req_status_code = err_code or 502
+                    req_error = (err_text or "upstream error")[:500]
+                    report_failure(backend, req_error)
+                    yield (
+                        "data: "
+                        + json.dumps(
+                            {"error": {"message": err_text or "upstream error",
+                                       "type": "upstream_error", "code": req_status_code}},
+                            ensure_ascii=False,
+                        )
+                        + "\n\n"
+                    )
+
+                if not upstream_sent_done:
+                    yield "data: [DONE]\n\n"
             except Exception as e:
                 req_success = False
                 req_error = str(e)

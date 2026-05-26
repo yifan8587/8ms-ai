@@ -4,8 +4,9 @@ from .models import APIBackend, BackendGroup, RoutingRule, RequestLog
 
 @admin.register(APIBackend)
 class APIBackendAdmin(admin.ModelAdmin):
-    list_display = ('name', 'base_url', 'weight', 'health_status', 'total_requests', 'is_active')
-    list_filter = ('is_active', 'health_status')
+    list_display = ('name', 'backend_type', 'base_url', 'weight', 'health_status',
+                    'total_requests', 'is_active')
+    list_filter = ('is_active', 'backend_type', 'health_status')
     search_fields = ('name', 'base_url')
     readonly_fields = ('total_requests', 'total_tokens', 'total_cost', 'rr_counter',
                        'consecutive_failures', 'last_health_check', 'last_failure_at',

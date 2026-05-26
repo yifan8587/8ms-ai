@@ -28,10 +28,21 @@ class APIBackend(models.Model):
         ('down', '不可用'),
     ]
 
+    BACKEND_TYPE_CHOICES = [
+        ('openai', 'OpenAI 兼容（OpenRouter / DeepSeek / 通义 / Moonshot 等）'),
+        ('anthropic', 'Anthropic Messages（Claude / CMI Cloudcode / tokenrouterapi 等）'),
+    ]
+
     name = models.CharField(max_length=100, unique=True, verbose_name='后端名称')
     description = models.CharField(max_length=300, blank=True, verbose_name='描述')
+    backend_type = models.CharField(
+        max_length=20, choices=BACKEND_TYPE_CHOICES, default='openai',
+        verbose_name='后端协议类型',
+        help_text='openai：标准 /v1/chat/completions；anthropic：/v1/messages（Claude 系，含 CMI Cloudcode）'
+    )
     base_url = models.URLField(verbose_name='API 基础地址',
-                               help_text='例如 https://openrouter.ai/api/v1')
+                               help_text='OpenAI 系如 https://openrouter.ai/api/v1；'
+                                         'Anthropic 系如 https://tokenrouterapi.com（无需 /v1 后缀，适配器会自行追加）')
     api_key = models.CharField(max_length=256, verbose_name='API Key')
     weight = models.PositiveIntegerField(default=1, verbose_name='权重',
                                          help_text='加权轮询时使用，值越大分配越多')

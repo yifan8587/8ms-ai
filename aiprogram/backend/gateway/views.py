@@ -144,36 +144,29 @@ class APIBackendTestView(APIView):
             backend = APIBackend.objects.get(pk=pk)
         except APIBackend.DoesNotExist:
             return Response({'code': 404, 'msg': '后端不存在'}, status=status.HTTP_404_NOT_FOUND)
-        config = get_backend_config(backend)
-        start = time.time()
-        try:
-            resp = http_requests.get(
-                f"{config['base_url']}/models",
-                headers=config['headers'],
-                timeout=min(config['timeout'], 15),
-            )
-            elapsed = int((time.time() - start) * 1000)
-            if resp.status_code == 200:
-                models_count = len(resp.json().get('data', []))
-                report_success(backend)
-                return Response({
-                    'code': 200,
-                    'msg': f'连接成功，发现 {models_count} 个模型',
-                    'data': {'response_time_ms': elapsed, 'models_count': models_count}
-                })
-            report_failure(backend, f"HTTP {resp.status_code}")
+        from .protocols import get_adapter
+        adapter = get_adapter(backend)
+        elapsed_ms, models_count, err = adapter.health_check()
+        if err is None:
+            report_success(backend)
             return Response({
-                'code': resp.status_code,
-                'msg': f'连接失败: HTTP {resp.status_code}',
-                'data': {'response_time_ms': elapsed}
+                'code': 200,
+                'msg': f'连接成功（{adapter.backend_type}），发现 {models_count} 个模型',
+                'data': {
+                    'response_time_ms': elapsed_ms,
+                    'models_count': models_count,
+                    'backend_type': adapter.backend_type,
+                },
             })
-        except Exception as e:
-            elapsed = int((time.time() - start) * 1000)
-            report_failure(backend, str(e))
-            return Response({
-                'code': 500, 'msg': f'连接失败: {str(e)}',
-                'data': {'response_time_ms': elapsed}
-            })
+        report_failure(backend, err)
+        return Response({
+            'code': 502,
+            'msg': f'连接失败（{adapter.backend_type}）: {err}',
+            'data': {
+                'response_time_ms': elapsed_ms,
+                'backend_type': adapter.backend_type,
+            },
+        })
 
 
 # ─── Backend Group CRUD ───────────────────────────────────────────

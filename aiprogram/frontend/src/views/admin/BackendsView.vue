@@ -41,6 +41,13 @@
           <el-table :data="backends" stripe border>
             <el-table-column prop="id" label="ID" width="56" />
             <el-table-column prop="name" label="名称" min-width="120" />
+            <el-table-column label="协议" width="92" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.backend_type === 'anthropic' ? 'warning' : 'success'" size="small" effect="plain">
+                  {{ row.backend_type === 'anthropic' ? 'Anthropic' : 'OpenAI' }}
+                </el-tag>
+              </template>
+            </el-table-column>
             <el-table-column prop="base_url" label="API 地址" min-width="240" show-overflow-tooltip>
               <template #default="{ row }">
                 <span class="mono-text">{{ row.base_url }}</span>
@@ -152,8 +159,21 @@
         <el-form-item label="描述">
           <el-input v-model="form.description" placeholder="可选描述" />
         </el-form-item>
+        <el-form-item label="协议类型" required>
+          <el-select v-model="form.backend_type" style="width:100%">
+            <el-option value="openai" label="OpenAI 兼容（OpenRouter / DeepSeek / 通义 / Moonshot 等）" />
+            <el-option value="anthropic" label="Anthropic Messages（Claude / CMI Cloudcode / tokenrouterapi 等）" />
+          </el-select>
+          <div class="form-hint">
+            openai：POST /v1/chat/completions，Authorization: Bearer …；
+            anthropic：POST /v1/messages，x-api-key + anthropic-version
+          </div>
+        </el-form-item>
         <el-form-item label="API 地址" required>
-          <el-input v-model="form.base_url" placeholder="https://openrouter.ai/api/v1" />
+          <el-input v-model="form.base_url"
+                    :placeholder="form.backend_type === 'anthropic'
+                      ? 'https://tokenrouterapi.com（或 https://api.anthropic.com）'
+                      : 'https://openrouter.ai/api/v1'" />
         </el-form-item>
         <el-form-item label="API Key" required>
           <el-input v-model="form.api_key" placeholder="sk-..." show-password />
@@ -277,7 +297,8 @@ const formVisible = ref(false)
 const isEdit = ref(false)
 const saving = ref(false)
 const formDefaults = {
-  id: null, name: '', description: '', base_url: '', api_key: '',
+  id: null, name: '', description: '', backend_type: 'openai',
+  base_url: '', api_key: '',
   weight: 1, timeout_seconds: 60, max_rpm: 0, max_concurrent: 0, is_active: true,
   pricing_multiplier: 1, stats_request_multiplier: 1,
 }
@@ -376,6 +397,7 @@ const openCreate = () => {
 const openEdit = (row) => {
   Object.assign(form, {
     id: row.id, name: row.name, description: row.description || '',
+    backend_type: row.backend_type || 'openai',
     base_url: row.base_url, api_key: '',
     weight: row.weight, timeout_seconds: row.timeout_seconds,
     max_rpm: row.max_rpm, max_concurrent: row.max_concurrent,
