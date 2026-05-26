@@ -15,6 +15,32 @@
     "search": "Search",
     "allCategories": "All Categories"
   },
+  "compliance": {
+    "title": "Compliance Notice on Service Area Restrictions",
+    "greeting": "Dear Visitor,",
+    "intro": "To ensure strict compliance with the Interim Measures for the Management of Generative AI Services, the Data Security Law, the Personal Information Protection Law and other applicable PRC regulations, we hereby clarify the scope of our service:",
+    "items": [
+      {
+        "title": "Service Area Restriction",
+        "body": "This platform currently provides large-model API access only to specific regions outside mainland China. We do not offer any form of service to enterprises, organisations or individuals located in mainland China (excluding Hong Kong SAR, Macao SAR and Taiwan)."
+      },
+      {
+        "title": "Data & Compliance",
+        "body": "Cross-border data transfers must complete strict security assessments and filing procedures. As we have not yet completed the relevant filings for generative AI services inside mainland China, we are unable to accept business requests from PRC-domestic entities."
+      },
+      {
+        "title": "User Commitment",
+        "body": "Your continued use of this service constitutes confirmation that you are not a PRC-domestic entity, and a commitment that your usage complies with the laws, regulations and content-safety requirements of your jurisdiction."
+      },
+      {
+        "title": "Disclaimer",
+        "body": "We accept no liability for any legal risks or data-security incidents arising from a user concealing their true location or circumventing technical restrictions."
+      }
+    ],
+    "agreeLabel": "I Understand and Continue",
+    "moreLabel": "Read Terms of Service",
+    "closeLabel": "Close notice"
+  },
   "nav": {
     "home": "Home",
     "resources": "Model Hub",

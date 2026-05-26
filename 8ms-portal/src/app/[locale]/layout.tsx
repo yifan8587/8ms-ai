@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import ComplianceNotice from "@/components/layout/compliance-notice";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -51,6 +52,7 @@ export default async function LocaleLayout({
             {children}
           </main>
           <Footer />
+          <ComplianceNotice />
         </NextIntlClientProvider>
       </body>
     </html>
